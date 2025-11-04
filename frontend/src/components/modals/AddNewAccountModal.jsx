@@ -45,8 +45,8 @@ const AddAccountModal = ({ isOpen, onClose, onSuccess }) => {
             });
 
             const data = await res.json();
-
-            if (data.ok) {
+            console.log("DATA ", data);
+            if (res.ok) {
                 setFormData({
                     Name: "",
                     Course: "",
@@ -60,7 +60,7 @@ const AddAccountModal = ({ isOpen, onClose, onSuccess }) => {
                 onSuccess();
                 onClose();
             } else {
-                toast.error(data.message || "Failed to add account.");
+                toast.error(data.error || "Failed to add account.");
             }
         } catch (err) {
             console.error("Error:", err);
@@ -127,7 +127,7 @@ const AddAccountModal = ({ isOpen, onClose, onSuccess }) => {
                                             ID Number
                                         </label>
                                         <input
-                                            type="text"
+                                            type="number"
                                             name="Student_Number"
                                             value={formData.Student_Number}
                                             onChange={handleChange}

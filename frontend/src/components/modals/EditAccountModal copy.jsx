@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import UserPNG from "../../assets/UserPNG.png";
 const API_URL = import.meta.env.VITE_API_URL;
 
-function EditAccountModal({ isOpen, onClose, onSuccess, selectedAccount, onSaveConfirmation }) {
+function EditAccountModal({ isOpen, onClose, onSuccess, selectedAccount, }) {
 
     const [formData, setFormData] = useState({
         Name: "",
@@ -35,7 +35,41 @@ function EditAccountModal({ isOpen, onClose, onSuccess, selectedAccount, onSaveC
         });
     };
 
+    const handleSubmit = async () => {
+        try {
+            const form = new FormData();
+            form.append("Name", formData.Name);
+            form.append("Student_Number", formData.Student_Number);
+            form.append("Course", formData.Course);
+            form.append("Year_And_Section", formData.Year_And_Section);
+            form.append("Email", formData.Email);
+            form.append("Account_Type", formData.Account_Type);
 
+            if (selectedFile) {
+                form.append("profileImage", selectedFile);
+            }
+
+            const res = await fetch(`/api/accounts/${selectedAccount.Student_Number}`, {
+                method: "PUT",
+                body: form, // ✅ use FormData directly
+                // Do NOT set "Content-Type", browser handles it
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                alert("Account updated successfully!");
+                toast.success("Account updated successfully!");
+                onSuccess();
+                onClose();
+            } else {
+                alert(data.message || "Failed to update account.");
+            }
+        } catch (err) {
+            console.error("Error:", err);
+            alert("Something went wrong.");
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -174,9 +208,7 @@ function EditAccountModal({ isOpen, onClose, onSuccess, selectedAccount, onSaveC
                 <div className="flex justify-end gap-3 mt-6">
                     <button
                         className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                        onClick={() => {
-                            onSaveConfirmation(formData, selectedFile);
-                        }}
+                        onClick={handleSubmit}
                     >
                         Save Changes
                     </button>

@@ -18,12 +18,17 @@ function Accounts() {
     const [searchTerm, setSearchTerm] = useState("");
     const [courses, setCourses] = useState([]);
     const [selectedCourses, setSelectedCourses] = useState({});
-    const [sections, setSections] = useState([]);
     const [selectedAccount, setSelectedAccount] = useState("");
-
+    const [pendingEditData, setPendingEditData] = useState(null);
     const [isAddNewAccountModalOpen, setIsAddNewAccountModalOpen] = useState(false);
     const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false)
-    const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+    const [confirmationModal, setConfirmationModal] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: null,
+        type: ""
+    });
 
     const getAccounts = async () => {
         try {
@@ -40,7 +45,6 @@ function Accounts() {
             const res = await fetch(
                 `/api/accounts/getAccounts?page=${page + 1}&limit=${rowsPerPage}&filters=${encodeURIComponent(filters)}&search=${searchQuery}`
             );
-
             const data = await res.json();
             setAccounts(data.data);
             setTotal(data.total);
@@ -49,19 +53,29 @@ function Accounts() {
         }
     };
 
-    const handleDelete = async (student_Number) => {
-        if (!window.confirm("Are you sure you want to delete this account?")) return;
+    const handleDelete = (student_Number) => {
+        setConfirmationModal({
+            isOpen: true,
+            title: "Delete Account",
+            message: [
+                "Are you sure you want to delete this account?",
+                "This action cannot be undone."
+            ],
+            onConfirm: () => performDelete(student_Number),
+            type: "delete"
+        })
+    }
 
+    const performDelete = async (student_Number) => {
         try {
             const res = await fetch(`/api/accounts/${student_Number}`, {
                 method: "DELETE",
             });
-
             const data = await res.json();
             if (res.ok) {
                 toast.success("Account deleted successfull!")
-                getAccounts();
                 fetchCourses();
+                getAccounts();
             } else {
                 toast.error("Failed to delete account.")
                 console.log(data.error);
@@ -76,6 +90,57 @@ function Accounts() {
         setSelectedAccount(selectedAccount);
         setIsEditAccountModalOpen(true);
     }
+
+    const handleSaveConfirmation = (formData, selectedFile) => {
+        setPendingEditData({ formData, selectedFile });
+        setConfirmationModal({
+            isOpen: true,
+            title: "Save Changes",
+            message: ["Are you sure you want to save changes?"],
+            onConfirm: () => {
+                performEditSave(formData, selectedFile)
+            }
+        })
+    }
+
+    const performEditSave = async (formData, selectedFile) => {
+
+        try {
+            const form = new FormData();
+
+            form.append("Name", formData.Name);
+            form.append("Student_Number", formData.Student_Number);
+            form.append("Course", formData.Course);
+            form.append("Year_And_Section", formData.Year_And_Section);
+            form.append("Email", formData.Email);
+            form.append("Account_Type", formData.Account_Type);
+
+            if (selectedFile) {
+                form.append("profileImage", selectedFile);
+            }
+
+            const res = await fetch(`/api/accounts/${selectedAccount.Student_Number}`, {
+                method: "PUT",
+                body: form,
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                toast.success("Account updated successfully!");
+                getAccounts();
+                fetchCourses();
+                setIsEditAccountModalOpen(false);
+            } else {
+                alert(data.error || "Failed to update account.");
+            }
+        } catch (err) {
+            console.error("Error:", err);
+            alert("Something went wrong.");
+        } finally {
+            setPendingEditData(null);
+        }
+    };
 
     const fetchCourses = async () => {
         const res = await fetch("/api/accounts/courses-with-sections");
@@ -126,6 +191,16 @@ function Accounts() {
             } else {
                 return { ...prev, [course]: [] };
             }
+        });
+    };
+
+    const closeConfirmationModal = () => {
+        setConfirmationModal({
+            isOpen: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+            type: ""
         });
     };
 
@@ -271,10 +346,19 @@ function Accounts() {
                     getAccounts();
                     fetchCourses();
                 }}
+                onSaveConfirmation={handleSaveConfirmation}
             />
 
             <ConfirmationModal
-              
+                isOpen={confirmationModal.isOpen}
+                title={confirmationModal.title}
+                message={confirmationModal.message}
+                onConfirm={() => {
+                    confirmationModal.onConfirm?.(),
+                        closeConfirmationModal();
+                }}
+                onCancel={closeConfirmationModal}
+                type={confirmationModal.type}
             />
 
         </>

@@ -103,6 +103,8 @@ export const addAccount = async (req, res) => {
             [Student_Number]
         );
 
+        console.log("EXISTING ", existing);
+
         if (existing.length > 0) {
             return res.status(400).json({ error: "Student Number already exists." });
         }
@@ -166,6 +168,7 @@ export const deleteAccount = async (req, res) => {
     }
 
     try {
+        console.log("NAM", Student_Number);
         const [result] = await db.query(
             "DELETE FROM accounts WHERE Student_Number = ?",
             [Student_Number]
