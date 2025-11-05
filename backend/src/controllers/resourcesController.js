@@ -4,11 +4,9 @@ import db from "../db.js";
 export const getResources = async (req, res) => {
   const { category, page = 1, limit = 15, types } = req.query;
   const offset = (page - 1) * limit;
-  // normalize types into an array
-  const typeFilters = types
-    ? Array.isArray(types) ? types : [types]
-    : [];
-  console.log(req.query)
+
+  const typeFilters = [types];
+
   try {
     let sql = "";
     let params = [];
@@ -41,9 +39,6 @@ export const getResources = async (req, res) => {
     res.status(500).json({ error: "Database query failed" });
   }
 };
-
-
-
 
 //SEARCH RESOURCES
 export const searchResources = async (req, res) => {

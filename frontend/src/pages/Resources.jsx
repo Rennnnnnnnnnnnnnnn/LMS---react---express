@@ -5,19 +5,32 @@ import SearchBar from "../components/SearchBar";
 import formatDate from "../utits/formatDate";
 import AddNewResourceModal from "../components/modals/AddNewResourceModal";
 
+import TablePagination from '@mui/material/TablePagination';
+
 function Resources() {
 
+    // Selection-related state
     const [selectedCategory, setSelectedCategory] = useState(null);
-    const [items, setItems] = useState([]);
+    const [selectedTypes, setSelectedTypes] = useState([]);
+
+    // Pagination-related state
     const [page, setPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [total, setTotal] = useState(0);
+
+    // Search and filter-related state
     const [searchTerm, setSearchTerm] = useState("");
     const [bookTypes, setBookTypes] = useState([]);
     const [paperTypes, setPaperTypes] = useState([]);
-    const [selectedTypes, setSelectedTypes] = useState([]);
+
+    // Modal state
     const [isAddNewResourceModalOpen, setIsAddNewResourceModalOpen] = useState(false);
 
+    // Data-related state
+    const [items, setItems] = useState([]);
+
     //FETCH DATA
-    const fetchData = async () => {
+    const getResources = async () => {
         try {
             const res = await axios.get("/api/resources", {
                 params: {
@@ -67,14 +80,14 @@ function Resources() {
 
     useEffect(() => {
         if (!selectedCategory) return;
-        fetchData();
+        getResources();
     }, [selectedCategory, page, selectedTypes]);
 
     useEffect(() => {
         if (searchTerm) {
             handleSearch(searchTerm);
         } else {
-            fetchData();
+            getResources();
         }
     }, [searchTerm, selectedCategory, page]);
 
@@ -93,6 +106,15 @@ function Resources() {
                 : [...prev, type] // add if not selected
         );
     };
+
+    const handleChangePage = (e, newPage) => {
+        setPage(newPage);
+    }
+
+    const handleChangeRowsPerPage = (e) => {
+        setRowsPerPage(parseInt(e.target.value, 10));
+        setPage(0);
+    }
 
     return (
         <>
@@ -185,18 +207,21 @@ function Resources() {
 
                             <div className="h-8 w-80">
                                 <SearchBar
-                                    placeholder="Search ..."
+                                    placeholder="Search..."
                                     onSearch={setSearchTerm}
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex justify-end items-center gap-2 mt-4 mb-4">
-                        <button onClick={() => setPage(p => Math.max(p - 1, 1))}>{"<<"}</button>
-                        <span>Page {page}</span>
-                        <button onClick={() => setPage(p => p + 1)}>{">>"}</button>
-                    </div>
+                    <TablePagination
+                        component="div"
+                        count={total}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        rowsPerPage={rowsPerPage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                    />
 
                     {items.length > 0 ? (
                         <div className="overflow-x-auto">
