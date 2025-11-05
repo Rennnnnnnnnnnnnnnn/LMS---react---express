@@ -1,64 +1,85 @@
 import db from "../db.js";
 
 // GET ACCOUNTS WITH PAGINATION, SEARCH, AND FILTERS
+// export const getAccounts = async (req, res) => {
+//       try {
+//          const page = parseInt(req.query.page) || 1;
+//          const limit = parseInt(req.query.limit) || 10;
+//          const offset = (page - 1) * limit;
+
+//          const search = req.query.search ? `%${req.query.search}%` : null;
+//          const filters = req.query.filters ? req.query.filters.split(';') : [];
+
+//          let conditions = [];
+//          let params = [];
+
+//          // Parse filters
+//          filters.forEach(f => {
+//              if (f.includes(':')) {
+//                  const [course, secs] = f.split(':');
+//                  const sectionArr = secs.split(',');
+//                  conditions.push(`(Course = ? AND Year_And_Section IN (${sectionArr.map(() => '?').join(',')}))`);
+//                  params.push(course, ...sectionArr);
+//              } else {
+//                  conditions.push(`(Course = ?)`);
+//                  params.push(f);
+//              }
+//          });
+
+//          let where = "WHERE 1=1";
+//          if (conditions.length > 0) {
+//              where += " AND (" + conditions.join(" OR ") + ")";
+//          }
+
+//          // Search filter
+//          if (search) {
+//              where += " AND Name LIKE ?";
+//              params.push(search);
+//          }
+
+//          // Main query with sorting
+//          const query = `SELECT * FROM accounts ${where} ORDER BY Course ASC, Year_And_Section ASC LIMIT ? OFFSET ?`;
+//          params.push(limit, offset);
+//          const [rows] = await db.query(query, params);
+
+//          // Count total
+//          const countQuery = `SELECT COUNT(*) AS total FROM accounts ${where}`;
+//          const [countRows] = await db.query(countQuery, params.slice(0, -2));
+//          const total = countRows[0].total;
+
+//          res.json({
+//              data: rows,
+//              page,
+//              limit,
+//              total,
+//              totalPages: Math.ceil(total / limit)
+//          });
+//      } catch (err) {
+//          console.error(err);
+//          res.status(500).json({ error: "Database query failed" });
+//      } 
+
+// };
+
 export const getAccounts = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const offset = (page - 1) * limit;
+        console.log("GET Accounts Route Hit");
 
-        const search = req.query.search ? `%${req.query.search}%` : null;
-        const filters = req.query.filters ? req.query.filters.split(';') : [];
+        // Extract 'filters' from the query parameters
+        const { filters } = req.query;
+        console.log("FILTERS", typeof filters);
+        // Log the filters received from the frontend
 
-        let conditions = [];
-        let params = [];
-
-        // Parse filters
-        filters.forEach(f => {
-            if (f.includes(':')) {
-                const [course, secs] = f.split(':');
-                const sectionArr = secs.split(',');
-                conditions.push(`(Course = ? AND Year_And_Section IN (${sectionArr.map(() => '?').join(',')}))`);
-                params.push(course, ...sectionArr);
-            } else {
-                conditions.push(`(Course = ?)`);
-                params.push(f);
-            }
-        });
-
-        let where = "WHERE 1=1";
-        if (conditions.length > 0) {
-            where += " AND (" + conditions.join(" OR ") + ")";
-        }
-
-        // Search filter
-        if (search) {
-            where += " AND Name LIKE ?";
-            params.push(search);
-        }
-
-        // Main query with sorting
-        const query = `SELECT * FROM accounts ${where} ORDER BY Course ASC, Year_And_Section ASC LIMIT ? OFFSET ?`;
-        params.push(limit, offset);
-        const [rows] = await db.query(query, params);
-
-        // Count total
-        const countQuery = `SELECT COUNT(*) AS total FROM accounts ${where}`;
-        const [countRows] = await db.query(countQuery, params.slice(0, -2));
-        const total = countRows[0].total;
-
-        res.json({
-            data: rows,
-            page,
-            limit,
-            total,
-            totalPages: Math.ceil(total / limit)
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database query failed" });
+    } catch (error) {
+        console.error("Error processing filters:", error);
+        res.status(500).json({ error: "Error processing request" });
     }
 };
+
+
+
+
+
 
 // GET DISTINCT COURSES, YEAR AND SECTIONS
 export const getCoursesWithSections = async (req, res) => {

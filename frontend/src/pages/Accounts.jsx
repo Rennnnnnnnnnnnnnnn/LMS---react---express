@@ -3,7 +3,7 @@ import TablePagination from '@mui/material/TablePagination';
 import SearchBar from "../components/SearchBar";
 import AddAccountModal from "../components/modals/AddNewAccountModal";
 import EditAccountModal from "../components/modals/EditAccountModal";
-
+import axios from "axios";
 import { toast } from "react-toastify";
 
 import DeleteIcon from "../assets/Delete_Icon.png";
@@ -11,17 +11,21 @@ import EditIcon from "../assets/Edit_Icon.png";
 import ConfirmationModal from "../components/modals/ConfirmationModal";
 
 function Accounts() {
-    const [accounts, setAccounts] = useState([]);
+    // Selection-related state
+    const [selectedAccount, setSelectedAccount] = useState("");
+    const [selectedCourses, setSelectedCourses] = useState({});
+
+    // Pagination-related state
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [total, setTotal] = useState(0);
+
+    // Search-related state
     const [searchTerm, setSearchTerm] = useState("");
-    const [courses, setCourses] = useState([]);
-    const [selectedCourses, setSelectedCourses] = useState({});
-    const [selectedAccount, setSelectedAccount] = useState("");
-    const [pendingEditData, setPendingEditData] = useState(null);
+
+    // Modal-related state
     const [isAddNewAccountModalOpen, setIsAddNewAccountModalOpen] = useState(false);
-    const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false)
+    const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState({
         isOpen: false,
         title: "",
@@ -30,7 +34,33 @@ function Accounts() {
         type: ""
     });
 
+    // Data-related state
+    const [accounts, setAccounts] = useState([]);
+    const [courses, setCourses] = useState([]);
+    const [pendingEditData, setPendingEditData] = useState(null);
+
     const getAccounts = async () => {
+        /*  try {
+             const filters = Object.entries(selectedCourses).map(([course, sections]) => {
+                 if (sections.length > 0) {
+                     return `${course}:${sections.join(',')}`;
+                 } else {
+                     return course;
+                 }
+             })
+                 .join(';');
+ 
+             const searchQuery = encodeURIComponent(searchTerm);
+             const res = await fetch(
+                 `/api/accounts/getAccounts?page=${page + 1}&limit=${rowsPerPage}&filters=${encodeURIComponent(filters)}&search=${searchQuery}`
+             );
+             const data = await res.json();
+             setAccounts(data.data);
+             setTotal(data.total);
+         } catch (error) {
+             console.error(error);
+         } */
+
         try {
             const filters = Object.entries(selectedCourses).map(([course, sections]) => {
                 if (sections.length > 0) {
@@ -38,20 +68,26 @@ function Accounts() {
                 } else {
                     return course;
                 }
-            })
-                .join(';');
+            }).join(';');
 
-            const searchQuery = encodeURIComponent(searchTerm);
-            const res = await fetch(
-                `/api/accounts/getAccounts?page=${page + 1}&limit=${rowsPerPage}&filters=${encodeURIComponent(filters)}&search=${searchQuery}`
-            );
-            const data = await res.json();
-            setAccounts(data.data);
-            setTotal(data.total);
+            console.log("KORS", selectedCourses)
+            console.log("FILTERS to send:", filters);
+
+            const res = await axios.get("/api/accounts/getAccounts", {
+                params: {
+                    filters: filters
+                }
+            })
+            console.log('Response:', res.data);  // Handle the response here
         } catch (error) {
-            console.error(error);
+            console.error('Error fetching data:', error);
         }
+
     };
+
+    useEffect(() => {
+        console.log("KORS ", selectedAccount)
+    }, [])
 
     const handleDelete = (student_Number) => {
         setConfirmationModal({

@@ -2,9 +2,9 @@ import { useEffect } from "react";
 
 function ConfirmationModal({ isOpen, title, message, onConfirm, onCancel }) {
 
-    useEffect(() => {
+/*     useEffect(() => {
         console.log("qweasdzxc")
-    }, []);
+    }, []); */
 
     if (!isOpen) return null;
 
