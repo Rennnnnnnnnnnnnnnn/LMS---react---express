@@ -40,7 +40,9 @@ function Accounts() {
     const [pendingEditData, setPendingEditData] = useState(null);
 
     const getAccounts = async () => {
-        /*   try {
+
+
+        /*  try {
              const filters = Object.entries(selectedCourses).map(([course, sections]) => {
                  if (sections.length > 0) {
                      return `${course}:${sections.join(',')}`;
@@ -85,10 +87,16 @@ function Accounts() {
             console.log("asd ", accounts);
             console.log('Fetched Accounts:', res.data);
 
+
         } catch (error) {
             console.error('Error fetching data:', error);
         }
+
     };
+
+    useEffect(() => {
+        console.log("KORS ", selectedAccount)
+    }, [])
 
     const handleDelete = (student_Number) => {
         setConfirmationModal({

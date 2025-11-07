@@ -61,34 +61,6 @@ import db from "../db.js";
 
 // };
 
-// const { filters, page, limit } = req.query;
-
-// const parsedFilters = filters ? Object.fromEntries(
-//     filters.split(";").filter(Boolean).map(entry => {
-//         const [key, values] = entry.split(":");
-//         return [key.trim(), values ? values.split(",").map(v => v.trim()) : []];
-//     })
-// ) : {};
-
-// {
-//     let whereClauses = [];
-//     let values = [];
-
-//     for (const [course, sections] of Object.entries(parsedFilters)) {
-//         if (sections.length > 0) {
-//             const placeholders = sections.map(() => '?').join(',');
-//             whereClauses.push(`(Course = ? AND Year_And_Section IN (${placeholders}))`);
-//             values.push(course, ...sections);
-//         } else {
-//             whereClauses.push(`(Course = ?)`);
-//             values.push(course, ...sections);
-//         }
-//     }
-// }
-
-// console.log('PILTERS ', filters)
-// console.log('PEYG ', page);
-// console.log('LIMIT ', limit);
 
 export const getAccounts = async (req, res) => {
 
