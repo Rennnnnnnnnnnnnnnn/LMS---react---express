@@ -1,0 +1,17 @@
+[33mcommit 640ed12cc31af9464e0ea3594b363c9026f4e64a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Lebbron <lebbron023@gmail.com>
+Date:   Thu Nov 6 01:15:37 2025 +0800
+
+    Started converting fetch to axios in accounts page
+
+[33mcommit 8a977d549286d24260a7b3375d2356c26d3177cc[m
+Author: Lebbron <lebbron023@gmail.com>
+Date:   Wed Nov 5 04:32:26 2025 +0800
+
+    Added the confirmation modal for editing and deleting of accountss
+
+[33mcommit c321e658d1ed11657412869063c3c8e613082cdf[m
+Author: Lebbron <lebbron023@gmail.com>
+Date:   Tue Nov 4 15:33:07 2025 +0800
+
+    first commit

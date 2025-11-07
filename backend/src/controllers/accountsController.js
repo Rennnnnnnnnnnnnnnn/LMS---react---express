@@ -61,18 +61,58 @@ import db from "../db.js";
 
 // };
 
+// const { filters, page, limit } = req.query;
+
+// const parsedFilters = filters ? Object.fromEntries(
+//     filters.split(";").filter(Boolean).map(entry => {
+//         const [key, values] = entry.split(":");
+//         return [key.trim(), values ? values.split(",").map(v => v.trim()) : []];
+//     })
+// ) : {};
+
+// {
+//     let whereClauses = [];
+//     let values = [];
+
+//     for (const [course, sections] of Object.entries(parsedFilters)) {
+//         if (sections.length > 0) {
+//             const placeholders = sections.map(() => '?').join(',');
+//             whereClauses.push(`(Course = ? AND Year_And_Section IN (${placeholders}))`);
+//             values.push(course, ...sections);
+//         } else {
+//             whereClauses.push(`(Course = ?)`);
+//             values.push(course, ...sections);
+//         }
+//     }
+// }
+
+// console.log('PILTERS ', filters)
+// console.log('PEYG ', page);
+// console.log('LIMIT ', limit);
+
 export const getAccounts = async (req, res) => {
+
+    //  const { filters, page, limit, searchTerm } = req.query;
+
+    const { page, limit } = req.query;
+
+    console.log("PAGEs =", page);
+    console.log("LIMIT =", limit);
+
+    const currentPage = parseInt(page, 10) || 0;
+    const pageSize = parseInt(limit, 10) || 10;
+    const offSet = (currentPage) * pageSize;
+
     try {
-        console.log("GET Accounts Route Hit");
+        const [total] = await db.query(`SELECT COUNT(*) AS total FROM accounts`);
+        const totalCount = total[0].total;
 
-        // Extract 'filters' from the query parameters
-        const { filters } = req.query;
-        console.log("FILTERS", typeof filters);
-        // Log the filters received from the frontend
-
-    } catch (error) {
-        console.error("Error processing filters:", error);
-        res.status(500).json({ error: "Error processing request" });
+        const [rows] = await db.query(`SELECT * FROM accounts LIMIT ? OFFSET ?`, [pageSize, offSet]);
+        console.log("Total Result: ", total);
+        res.json({ rows, total: totalCount });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database query failed' });
     }
 };
 

@@ -16,8 +16,8 @@ function Accounts() {
     const [selectedCourses, setSelectedCourses] = useState({});
 
     // Pagination-related state
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
     const [total, setTotal] = useState(0);
 
     // Search-related state
@@ -40,7 +40,7 @@ function Accounts() {
     const [pendingEditData, setPendingEditData] = useState(null);
 
     const getAccounts = async () => {
-        /*  try {
+        /*   try {
              const filters = Object.entries(selectedCourses).map(([course, sections]) => {
                  if (sections.length > 0) {
                      return `${course}:${sections.join(',')}`;
@@ -59,7 +59,8 @@ function Accounts() {
              setTotal(data.total);
          } catch (error) {
              console.error(error);
-         } */
+         }  */
+
 
         try {
             const filters = Object.entries(selectedCourses).map(([course, sections]) => {
@@ -70,24 +71,24 @@ function Accounts() {
                 }
             }).join(';');
 
-            console.log("KORS", selectedCourses)
-            console.log("FILTERS to send:", filters);
-
             const res = await axios.get("/api/accounts/getAccounts", {
                 params: {
-                    filters: filters
+                    filters: filters,
+                    page: page,
+                    limit: limit,
+                    searchTerm: searchTerm
                 }
             })
-            console.log('Response:', res.data);  // Handle the response here
+
+            setAccounts(res.data.rows);
+            setTotal(res.data.total);
+            console.log("asd ", accounts);
+            console.log('Fetched Accounts:', res.data);
+
         } catch (error) {
             console.error('Error fetching data:', error);
         }
-
     };
-
-    useEffect(() => {
-        console.log("KORS ", selectedAccount)
-    }, [])
 
     const handleDelete = (student_Number) => {
         setConfirmationModal({
@@ -190,19 +191,19 @@ function Accounts() {
 
     useEffect(() => {
         getAccounts();
-    }, [page, rowsPerPage]);
+    }, [page, limit]);
 
     const handleChangePage = (e, newPage) => {
         setPage(newPage);
     };
 
     const handleChangeRowsPerPage = (e) => {
-        setRowsPerPage(parseInt(e.target.value, 10));
-        setPage(0);
+        setLimit(parseInt(e.target.value, 10));
+        setPage(1);
     };
 
     useEffect(() => {
-        setPage(0);
+        setPage(1);
         getAccounts();
     }, [searchTerm, selectedCourses]);
 
@@ -264,7 +265,7 @@ function Accounts() {
                             count={total}
                             page={page}
                             onPageChange={handleChangePage}
-                            rowsPerPage={rowsPerPage}
+                            rowsPerPage={limit}
                             onRowsPerPageChange={handleChangeRowsPerPage}
                         />
                     </div>
@@ -325,7 +326,7 @@ function Accounts() {
                         <tbody>
                             {accounts.map((account, index) => (
                                 <tr key={account.Student_Number} className="border-b border-gray-200 hover:bg-gray-300 ">
-                                    <td className="px-8 py-2">{index + 1 + page * rowsPerPage}</td>
+                                    <td className="px-8 py-2">{index + 1 + page * limit}</td>
                                     <td className="px-8 py-2">{account.Name}</td>
                                     <td className="px-8 py-2">{account.Course} - {account.Year_And_Section}</td>
                                     <td className="px-8 py-2">{account.Email}</td>
