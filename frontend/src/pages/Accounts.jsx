@@ -16,7 +16,7 @@ function Accounts() {
     const [selectedCourses, setSelectedCourses] = useState({});
 
     // Pagination-related state
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(0);
     const [limit, setLimit] = useState(10);
     const [total, setTotal] = useState(0);
 
@@ -40,30 +40,6 @@ function Accounts() {
     const [pendingEditData, setPendingEditData] = useState(null);
 
     const getAccounts = async () => {
-
-
-        /*  try {
-             const filters = Object.entries(selectedCourses).map(([course, sections]) => {
-                 if (sections.length > 0) {
-                     return `${course}:${sections.join(',')}`;
-                 } else {
-                     return course;
-                 }
-             })
-                 .join(';');
- 
-             const searchQuery = encodeURIComponent(searchTerm);
-             const res = await fetch(
-                 `/api/accounts/getAccounts?page=${page + 1}&limit=${rowsPerPage}&filters=${encodeURIComponent(filters)}&search=${searchQuery}`
-             );
-             const data = await res.json();
-             setAccounts(data.data);
-             setTotal(data.total);
-         } catch (error) {
-             console.error(error);
-         }  */
-
-
         try {
             const filters = Object.entries(selectedCourses).map(([course, sections]) => {
                 if (sections.length > 0) {
@@ -84,9 +60,10 @@ function Accounts() {
 
             setAccounts(res.data.rows);
             setTotal(res.data.total);
-            console.log("asd ", accounts);
+            console.log(res.data.rows);
+            console.log("PURE DATA ", res.data);
+            console.log("setAccounts ", accounts);
             console.log('Fetched Accounts:', res.data);
-
 
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -207,11 +184,11 @@ function Accounts() {
 
     const handleChangeRowsPerPage = (e) => {
         setLimit(parseInt(e.target.value, 10));
-        setPage(1);
+        setPage(0);
     };
 
     useEffect(() => {
-        setPage(1);
+        setPage(0);
         getAccounts();
     }, [searchTerm, selectedCourses]);
 
@@ -334,8 +311,7 @@ function Accounts() {
                         <tbody>
                             {accounts.map((account, index) => (
                                 <tr key={account.Student_Number} className="border-b border-gray-200 hover:bg-gray-300 ">
-                                    <td className="px-8 py-2">{index + 1 + page * limit}</td>
-                                    <td className="px-8 py-2">{account.Name}</td>
+                                    <td className="px-8 py-2">{index + 1 + page * limit}</td>   <td className="px-8 py-2">{account.Name}</td>
                                     <td className="px-8 py-2">{account.Course} - {account.Year_And_Section}</td>
                                     <td className="px-8 py-2">{account.Email}</td>
 

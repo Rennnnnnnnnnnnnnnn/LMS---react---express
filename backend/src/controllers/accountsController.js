@@ -66,27 +66,116 @@ export const getAccounts = async (req, res) => {
 
     //  const { filters, page, limit, searchTerm } = req.query;
 
-    const { page, limit } = req.query;
-
-    console.log("PAGEs =", page);
-    console.log("LIMIT =", limit);
+    const { page, limit, filters } = req.query;
 
     const currentPage = parseInt(page, 10) || 0;
     const pageSize = parseInt(limit, 10) || 10;
     const offSet = (currentPage) * pageSize;
 
-    try {
+    const conditions = [];
+    const params = [];
+    console.log("PURE FILTERS: ", filters);
+    if (filters) {
+        // Split filters by semicolons to separate each subject
+        const filterEntries = filters.split(';');
+        console.log("filterEntries ", filterEntries);
+        // Convert the array of strings into an object
+        const parsedFilters = filterEntries.reduce((acc, entry) => {
+            // Check if the entry contains a colon (i.e., subject:sections)
+            if (entry.includes(':')) {
+                const [course, sections] = entry.split(':');
+                const sectionArray = sections.split(',');  // Split the sections by commas
+                acc[course] = sectionArray;  // Add the subject and its sections to the accumulator
+            } else {
+                // If no colon, treat it as a subject with no sections
+                acc[entry] = [];  // Empty array if no sections are provided
+            }
+            return acc;
+        }, {});
+
+        Object.entries(parsedFilters).forEach(([course, sections]) => {
+            if (sections.length > 0) {
+                const placeholders = sections.map(() => '?').join(',');
+                conditions.push(`(Course = ? AND Year_And_Section IN (${placeholders}))`);
+                params.push(course, ...sections);
+            } else {
+                conditions.push(`(Course = ?)`);
+                params.push(course);
+            }
+        })
+
+        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' OR ')}` : '';
+        // add pagination params at the end
+        const sqlQuery = `SELECT * FROM accounts ${whereClause} LIMIT ? OFFSET ?`;
+        const allParams = [...params, pageSize, offSet];
+        const [rows] = await db.query(sqlQuery, allParams);
+
         const [total] = await db.query(`SELECT COUNT(*) AS total FROM accounts`);
         const totalCount = total[0].total;
 
-        const [rows] = await db.query(`SELECT * FROM accounts LIMIT ? OFFSET ?`, [pageSize, offSet]);
-        console.log("Total Result: ", total);
+        console.log("qweqwe", rows.length, total);
         res.json({ rows, total: totalCount });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Database query failed' });
+        return;
+    } else {
+        console.log("No filters provided");
+        try {
+            const [total] = await db.query(`SELECT COUNT(*) AS total FROM accounts`);
+            const totalCount = total[0].total;
+            const [rows] = await db.query(`SELECT * FROM accounts LIMIT ? OFFSET ?`, [pageSize, offSet]);
+            res.json({ rows, total: totalCount });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Database query failed' });
+        }
     }
 };
+
+
+
+// // Step 1: Parse the input string
+// const parsedFilters = filters.split(';').map(item => {
+//     const [course, sections] = item.split(':');
+//     return {
+//         course_name: course,
+//         sections: sections.split(',')
+//     };
+// });
+
+// console.log("parsedfilters " , parsedFilters);
+
+//     // Step 2: Create SQL query parts
+//     const conditions = filters.map(filter => {
+//         const courseFilter = `course_name = '${filter.course_name}'`;
+//         const sectionFilter = `section IN ('${filter.sections.join("', '")}')`;
+//         return `(${courseFilter} AND ${sectionFilter})`;
+//     }).join(' OR ');
+
+//     // Step 3: Construct the full query
+//     const sqlQuery = `
+//     SELECT * 
+//     FROM courses 
+//     WHERE ${conditions};
+//   `;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
