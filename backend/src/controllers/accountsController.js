@@ -64,9 +64,7 @@ import db from "../db.js";
 
 export const getAccounts = async (req, res) => {
 
-    //  const { filters, page, limit, searchTerm } = req.query;
-
-    const { page, limit, filters } = req.query;
+    const { page, limit, filters, searchTerm } = req.query;
 
     const currentPage = parseInt(page, 10) || 0;
     const pageSize = parseInt(limit, 10) || 10;
@@ -74,11 +72,15 @@ export const getAccounts = async (req, res) => {
 
     const conditions = [];
     const params = [];
-    console.log("PURE FILTERS: ", filters);
-    if (filters) {
+    const searchCondition = [];
+    const searchParams = [];
+
+    console.log("PURE FILTERS: ", filters, "SEARCHTERM", searchTerm);
+
+    try {
         // Split filters by semicolons to separate each subject
         const filterEntries = filters.split(';');
-        console.log("filterEntries ", filterEntries);
+        console.log("filterentries " , filterEntries)
         // Convert the array of strings into an object
         const parsedFilters = filterEntries.reduce((acc, entry) => {
             // Check if the entry contains a colon (i.e., subject:sections)
@@ -93,89 +95,58 @@ export const getAccounts = async (req, res) => {
             return acc;
         }, {});
 
-        Object.entries(parsedFilters).forEach(([course, sections]) => {
-            if (sections.length > 0) {
-                const placeholders = sections.map(() => '?').join(',');
-                conditions.push(`(Course = ? AND Year_And_Section IN (${placeholders}))`);
-                params.push(course, ...sections);
-            } else {
-                conditions.push(`(Course = ?)`);
-                params.push(course);
-            }
-        })
+        console.log("parsedFilters ", parsedFilters);
+        if (filters) {
+            Object.entries(parsedFilters).forEach(([course, sections]) => {
+                if (sections.length > 0) {
+                    const placeholders = sections.map(() => '?').join(',');
+                    conditions.push(`(Course = ? AND Year_And_Section IN (${placeholders}))`);
+                    params.push(course, ...sections);
+                } else {
+                    conditions.push(`(Course = ?)`);
+                    params.push(course);
+                }
+            })
+        }
 
-        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' OR ')}` : '';
-        // add pagination params at the end
+        console.log("KONDISYON ", conditions, "PARAMS ", params);
+
+        let whereClause;
+
+        if (searchTerm && conditions && conditions.length > 0) {
+            searchCondition.push(`(Name LIKE ? OR Email LIKE ?)`);
+            searchParams.push(`%${searchTerm}%`, `%${searchTerm}%`);
+            params.push(...searchParams.map(p => `${p}`));
+            whereClause = `WHERE ${conditions.join(' OR ')} AND ${searchCondition.join()}`;
+            console.log("PAREHAS");
+        } else if (searchTerm) {
+            searchCondition.push(`(Name LIKE ? OR Email LIKE ?)`);
+            searchParams.push(`%${searchTerm}%`, `%${searchTerm}%`);
+            params.push(...searchParams.map(p => `${p}`));
+            whereClause = `WHERE ${searchCondition.join()}`
+            console.log("SEARCH TERM LANG")
+        } else if (conditions && conditions.length > 0) {
+            whereClause = `WHERE ${conditions.join(' OR ')}`;
+            console.log("CONDITIONS LANG")
+        }
         const sqlQuery = `SELECT * FROM accounts ${whereClause} LIMIT ? OFFSET ?`;
         const allParams = [...params, pageSize, offSet];
-        const [rows] = await db.query(sqlQuery, allParams);
 
+
+        console.log("QUERY ", sqlQuery);
+        console.log("PARAMS ", allParams);
+
+        const [rows] = await db.query(sqlQuery, allParams);
         const [total] = await db.query(`SELECT COUNT(*) AS total FROM accounts`);
         const totalCount = total[0].total;
 
-        console.log("qweqwe", rows.length, total);
         res.json({ rows, total: totalCount });
         return;
-    } else {
-        console.log("No filters provided");
-        try {
-            const [total] = await db.query(`SELECT COUNT(*) AS total FROM accounts`);
-            const totalCount = total[0].total;
-            const [rows] = await db.query(`SELECT * FROM accounts LIMIT ? OFFSET ?`, [pageSize, offSet]);
-            res.json({ rows, total: totalCount });
-        } catch (err) {
-            console.error(err);
-            res.status(500).json({ error: 'Database query failed' });
-        }
-    }
-};
+    } catch (error) {
 
 
-
-// // Step 1: Parse the input string
-// const parsedFilters = filters.split(';').map(item => {
-//     const [course, sections] = item.split(':');
-//     return {
-//         course_name: course,
-//         sections: sections.split(',')
-//     };
-// });
-
-// console.log("parsedfilters " , parsedFilters);
-
-//     // Step 2: Create SQL query parts
-//     const conditions = filters.map(filter => {
-//         const courseFilter = `course_name = '${filter.course_name}'`;
-//         const sectionFilter = `section IN ('${filter.sections.join("', '")}')`;
-//         return `(${courseFilter} AND ${sectionFilter})`;
-//     }).join(' OR ');
-
-//     // Step 3: Construct the full query
-//     const sqlQuery = `
-//     SELECT * 
-//     FROM courses 
-//     WHERE ${conditions};
-//   `;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    };
+}
 
 
 

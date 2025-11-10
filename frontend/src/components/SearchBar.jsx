@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 
-export default function SearchBar({ 
-  placeholder = "Search...", 
-  value: propValue, 
-  onSearch 
+export default function SearchBar({
+  placeholder,
+  value: propValue,
+  onSearch
 }) {
   const [query, setQuery] = useState(propValue || "");
 
