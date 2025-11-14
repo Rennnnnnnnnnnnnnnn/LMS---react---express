@@ -75,12 +75,9 @@ export const getAccounts = async (req, res) => {
     const searchCondition = [];
     const searchParams = [];
 
-    console.log("PURE FILTERS: ", filters, "SEARCHTERM", searchTerm);
-
     try {
         // Split filters by semicolons to separate each subject
         const filterEntries = filters.split(';');
-        console.log("filterentries " , filterEntries)
         // Convert the array of strings into an object
         const parsedFilters = filterEntries.reduce((acc, entry) => {
             // Check if the entry contains a colon (i.e., subject:sections)
@@ -95,7 +92,6 @@ export const getAccounts = async (req, res) => {
             return acc;
         }, {});
 
-        console.log("parsedFilters ", parsedFilters);
         if (filters) {
             Object.entries(parsedFilters).forEach(([course, sections]) => {
                 if (sections.length > 0) {
@@ -108,8 +104,6 @@ export const getAccounts = async (req, res) => {
                 }
             })
         }
-
-        console.log("KONDISYON ", conditions, "PARAMS ", params);
 
         let whereClause;
 
@@ -132,20 +126,21 @@ export const getAccounts = async (req, res) => {
         const sqlQuery = `SELECT * FROM accounts ${whereClause} LIMIT ? OFFSET ?`;
         const allParams = [...params, pageSize, offSet];
 
-
-        console.log("QUERY ", sqlQuery);
-        console.log("PARAMS ", allParams);
-
         const [rows] = await db.query(sqlQuery, allParams);
-        const [total] = await db.query(`SELECT COUNT(*) AS total FROM accounts`);
+
+        const sqlTotalQuery = `SELECT COUNT(*) AS total FROM accounts ${whereClause}`;
+        const [total] = await db.query(sqlTotalQuery, allParams);
         const totalCount = total[0].total;
 
         res.json({ rows, total: totalCount });
         return;
     } catch (error) {
-
-
-    };
+        console.error("Error while fetching accounts:", error);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred while retrieving accounts.",
+        });
+    }
 }
 
 

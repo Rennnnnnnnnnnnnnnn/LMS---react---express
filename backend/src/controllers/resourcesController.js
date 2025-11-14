@@ -1,76 +1,125 @@
+import { parse } from "dotenv";
 import db from "../db.js";
 
 //GET RESOURCES
 export const getResources = async (req, res) => {
-  const { category, page = 1, limit = 15, types } = req.query;
-  const offset = (page - 1) * limit;
 
-  const typeFilters = [types];
+  const { selectedCategory, selectedTypes, page, limit, searchTerm, status } = req.query;
 
-  try {
-    let sql = "";
-    let params = [];
+  const currentPage = parseInt(page, 10);
+  const pageSize = parseInt(limit, 10);
+  const offSet = currentPage * pageSize;
 
-    if (category === "books") {
-      sql = `SELECT * FROM books`;
-      if (typeFilters.length > 0) {
-        const placeholders = typeFilters.map(() => "?").join(", ");
-        sql += ` WHERE Type IN (${placeholders})`;
-        params.push(...typeFilters);
-      }
-      sql += ` LIMIT ? OFFSET ?`;
-      params.push(Number(limit), Number(offset));
-    } else if (category === "academic-papers") {
-      sql = `SELECT * FROM academic_papers`;
-      if (typeFilters.length > 0) {
-        const placeholders = typeFilters.map(() => "?").join(", ");
-        sql += ` WHERE Type IN (${placeholders})`;
-        params.push(...typeFilters);
-      }
-      sql += ` LIMIT ? OFFSET ?`;
-      params.push(Number(limit), Number(offset));
-    } else {
-      return res.status(400).json({ error: "Invalid category" });
-    }
-    const [rows] = await db.query(sql, params);
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Database query failed" });
-  }
-};
+  let searchCondition = [];
+  let statusCondition = [];
+  let typeCondition = [];
+  let allConditions = [];
+  let params = [];
+  let whereClause = "";
+  let sql = "";
+  let types;
 
-//SEARCH RESOURCES
-export const searchResources = async (req, res) => {
-  const { category, query, page = 1, limit = 15 } = req.query;
-  const offset = (page - 1) * limit;
-
-  if (!category || !query) {
-    return res.status(400).json({ error: 'Category and query are required' });
-  }
 
   try {
-    let sql = '';
-    let params = [];
+    //FOR BOOKS
+    if (selectedCategory === "books") {
+      //CHECK FOR SEARCHTERM
+      if (searchTerm) {
+        conditions.push(("title_name LIKE ? OR author_name LIKE ?"));
+        params.push(`%${searchTerm}%`, `%${searchTerm}%`);
+        whereClause = `WHERE ${conditions}`;
+      }
+      //CHECK FOR SELECTEDTYPES
+      if (selectedTypes) {
+        if (typeof selectedTypes === "string") {
+          types = [selectedTypes];
+        }
+        if (types && Array.isArray(types) || selectedTypes && Array.isArray(selectedTypes)) {
 
-    if (category === 'books') {
-      sql = `SELECT * FROM books WHERE Title_Name LIKE ? OR Author_Name LIKE ? LIMIT ? OFFSET ?`;
-      const searchTerm = `%${query}%`;
-      params = [searchTerm, searchTerm, Number(limit), Number(offset)];
-    } else if (category === 'academic-papers') {
-      sql = `SELECT * FROM academic_papers WHERE Title_Name LIKE ? OR Author_Name LIKE ? OR Category LIKE ? LIMIT ? OFFSET ?`;
-      const searchTerm = `%${query}%`;
-      params = [searchTerm, searchTerm, searchTerm, Number(limit), Number(offset)];
-    } else {
-      return res.status(400).json({ error: 'Invalid category' });
+          const length = types ? types.length : selectedTypes.length;
+
+          if (length > 0) {
+            for (let i = 0; i < length; i++) {
+              conditions.push(("type = ?"));
+            }
+            whereClause = `WHERE ${conditions.join(" OR ")}`;
+          }
+        }
+        params.push(...(types ? types : selectedTypes));
+      }
+
+      params.push(pageSize, offSet);
+      sql = `SELECT * FROM books ${whereClause} LIMIT ? OFFSET ?`
+      console.log(sql);
+      console.log(params);
+
+      const [rows] = await db.query(sql, params);
+      const sqlTotalQuery = `SELECT COUNT(*) AS total FROM books ${whereClause}`;
+      const [total] = await db.query(sqlTotalQuery, params);
+      const totalCount = total[0].total;
+
+      res.json({ rows, total: totalCount });
+
     }
-    const [rows] = await db.query(sql, params);
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Database query failed' });
+
+    //FOR ACADEMIC PAPERS
+    if (selectedCategory === "academic-papers") {
+      //CHECK FOR SELECTEDTYPES
+      if (selectedTypes) {
+        if (typeof selectedTypes === "string") {
+          types = [selectedTypes];
+        }
+        if (types && Array.isArray(types) || selectedTypes && Array.isArray(selectedTypes)) {
+          const length = types ? types.length : selectedTypes.length;
+          if (length > 0) {
+            for (let i = 0; i < length; i++) {
+              typeCondition.push((("type = ?")));
+            }
+          }
+        }
+        params.push(...(types ? types : selectedTypes));
+
+        if (typeCondition && typeCondition.length > 0) {
+          allConditions.push(`(${typeCondition.join(" OR ")})`);
+        }
+      }
+      //CHECK FOR SEARCHTERM
+      if (searchTerm && searchTerm.trim() !== "") {
+        searchCondition.push(("title_name LIKE ? OR author_name LIKE ? OR course LIKE ?"));
+        params.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
+        if (searchCondition && searchCondition.length > 0) {
+          allConditions.push(searchCondition.join(""));
+        }
+      }
+      //CHECK FOR STATUS
+      if (status !== "") {
+        statusCondition.push(("status = ?"));
+        params.push(status);
+        if (statusCondition && statusCondition.length > 0) {
+          allConditions.push(statusCondition.join(""));
+        }
+      }
+
+      allConditions.length > 0 ? whereClause = `WHERE ${allConditions.join("  AND ")}` : "";
+
+      params.push(pageSize, offSet);
+      sql = `SELECT * FROM academic_papers ${whereClause} LIMIT ? OFFSET ?`
+
+      const [rows] = await db.query(sql, params);
+      const sqlTotalQuery = `SELECT COUNT(*) AS total FROM academic_papers ${whereClause}`;
+      const [total] = await db.query(sqlTotalQuery, params);
+      const totalCount = total[0].total;
+      res.json({ rows, total: totalCount });
+    }
+
+  } catch (error) {
+    console.error("Error while fetching academic papers:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while retrieving academic papers.",
+    });
   }
-};
+}
 
 //GET DISTINCT TYPES
 export const getDistinctTypes = async (req, res) => {
@@ -79,7 +128,6 @@ export const getDistinctTypes = async (req, res) => {
   if (!category) {
     return res.status(400).json({ error: "Category and query are required" });
   }
-
   try {
     let sql = "";
 

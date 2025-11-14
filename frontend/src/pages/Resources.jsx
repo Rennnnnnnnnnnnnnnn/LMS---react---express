@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import qs from "qs";
+import qs, { stringify } from "qs";
 import SearchBar from "../components/SearchBar";
 import formatDate from "../utits/formatDate";
 import AddNewResourceModal from "../components/modals/AddNewResourceModal";
@@ -8,20 +8,19 @@ import AddNewResourceModal from "../components/modals/AddNewResourceModal";
 import TablePagination from '@mui/material/TablePagination';
 
 function Resources() {
-
     // Selection-related state
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [selectedTypes, setSelectedTypes] = useState([]);
 
     // Pagination-related state
-    const [page, setPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [page, setPage] = useState(0);
+    const [limit, setLimit] = useState(10);
     const [total, setTotal] = useState(0);
 
     // Search and filter-related state
     const [searchTerm, setSearchTerm] = useState("");
-    const [bookTypes, setBookTypes] = useState([]);
-    const [paperTypes, setPaperTypes] = useState([]);
+    const [types, setTypes] = useState([]);
+    const [status, setStatus] = useState("");
 
     // Modal state
     const [isAddNewResourceModalOpen, setIsAddNewResourceModalOpen] = useState(false);
@@ -34,14 +33,17 @@ function Resources() {
         try {
             const res = await axios.get("/api/resources", {
                 params: {
-                    category: selectedCategory,
-                    page,
-                    types: selectedTypes,
+                    selectedCategory: selectedCategory,
+                    selectedTypes: selectedTypes,
+                    status: status,
+                    page: page,
+                    limit: limit,
+                    searchTerm: searchTerm,
                 },
-                paramsSerializer: (params) =>
-                    qs.stringify(params, { arrayFormat: "repeat" }),
+                paramsSerializer: params => qs.stringify(params, { arrayFormat: 'repeat' }),
             });
-            setItems(res.data);
+            setItems(res.data.rows);
+            setTotal(res.data.total);
         } catch (err) {
             console.error(err);
         }
@@ -49,50 +51,28 @@ function Resources() {
 
     //FETCH DISTINCT TYPES
     const fetchDistinctTypes = async () => {
-        if (!selectedCategory) return;
-
+        if (!selectedCategory) return
         try {
             const res = await axios.get("/api/resources/types", {
                 params: { category: selectedCategory },
             });
 
             if (selectedCategory === "books") {
-                setBookTypes(res.data);
+                setTypes(res.data);
             } else if (selectedCategory === "academic-papers") {
-                setPaperTypes(res.data);
+                setTypes(res.data);
             }
         } catch (err) {
             console.error(err);
         }
     };
 
-    //HANDLE SEARCH
-    const handleSearch = async (searchTerm) => {
-        try {
-            const res = await axios.get('/api/resources/search', {
-                params: { category: selectedCategory, query: searchTerm, page },
-            });
-            setItems(res.data);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
     useEffect(() => {
-        if (!selectedCategory) return;
         getResources();
-    }, [selectedCategory, page, selectedTypes]);
+    }, [searchTerm, selectedCategory, page, limit, selectedTypes, status]);
 
     useEffect(() => {
-        if (searchTerm) {
-            handleSearch(searchTerm);
-        } else {
-            getResources();
-        }
-    }, [searchTerm, selectedCategory, page]);
-
-    useEffect(() => {
-        setPage(1);
+        setPage(0);
     }, [selectedCategory]);
 
     useEffect(() => {
@@ -111,9 +91,13 @@ function Resources() {
         setPage(newPage);
     }
 
-    const handleChangeRowsPerPage = (e) => {
-        setRowsPerPage(parseInt(e.target.value, 10));
+    const handlechangelimit = (e) => {
+        setLimit(parseInt(e.target.value, 10));
         setPage(0);
+    }
+
+    const handleStatusChange = (e) => {
+        setStatus(e.target.value);
     }
 
     return (
@@ -139,7 +123,7 @@ function Resources() {
 
                         {selectedCategory === "books" && (
                             <div className="pl-6 space-y-1">
-                                {bookTypes.map((type, index) => (
+                                {types.map((type, index) => (
                                     <label key={index} className="flex items-center space-x-2">
                                         <input
                                             type="checkbox"
@@ -172,7 +156,7 @@ function Resources() {
 
                         {selectedCategory === "academic-papers" && (
                             <div className="pl-6 space-y-1">
-                                {paperTypes.map((type, index) => (
+                                {types.map((type, index) => (
                                     <label key={index} className="flex items-center space-x-2">
                                         <input
                                             type="checkbox"
@@ -213,16 +197,24 @@ function Resources() {
                             </div>
                         </div>
                     </div>
-
-                    <TablePagination
-                        component="div"
-                        count={total}
-                        page={page}
-                        onPageChange={handleChangePage}
-                        rowsPerPage={rowsPerPage}
-                        onRowsPerPageChange={handleChangeRowsPerPage}
-                    />
-
+                    <div className="flex flex-row items-center justify-end">
+                        <select
+                            className="p-1 h-10 border rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            id="status" value={status} onChange={handleStatusChange}>
+                            <option value="">All</option>
+                            <option value="Available">Available</option>
+                            <option value="Checked Out">Checked Out</option>
+                            <option value="Archived">Archived</option>
+                        </select>
+                        <TablePagination
+                            component="div"
+                            count={total}
+                            page={page}
+                            onPageChange={handleChangePage}
+                            rowsPerPage={limit}
+                            onRowsPerPageChange={handlechangelimit}
+                        />
+                    </div>
                     {items.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="min-w-full border border-gray-300 bg-white shadow-md rounded-lg overflow-hidden">
@@ -254,7 +246,7 @@ function Resources() {
                                         <tr key={index} className="hover:bg-green-200">
                                             {selectedCategory === "books" ? (
                                                 <>
-                                                    <td className="px-8 py-2">{(page - 1) * 15 + index + 1}</td>
+                                                    <td className="px-8 py-2">{(page * limit) + index + 1}</td>
                                                     <td className="px-4 py-2">{item.Title_Name}</td>
                                                     <td className="px-4 py-2">{item.Author_Name}</td>
                                                     <td className="px-4 py-2">{item.Type}</td>
@@ -262,7 +254,7 @@ function Resources() {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <td className="px-8 py-2">{(page - 1) * 15 + index + 1}</td>
+                                                    <td className="px-8 py-2">{(page * limit) + index + 1}</td>
                                                     <td className="px-8 py-2">{item.Title_Name}</td>
                                                     <td className="px-4 py-2">{item.Author_Name}</td>
                                                     <td className="px-4 py-2">{item.Type}</td>

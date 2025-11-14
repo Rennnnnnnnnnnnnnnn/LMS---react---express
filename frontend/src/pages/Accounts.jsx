@@ -60,21 +60,13 @@ function Accounts() {
 
             setAccounts(res.data.rows);
             setTotal(res.data.total);
-            console.log(res.data.rows);
-            console.log("PURE DATA ", res.data);
-            console.log("setAccounts ", accounts);
-            console.log('Fetched Accounts:', res.data);
-
         } catch (error) {
             console.error('Error fetching data:', error);
         }
 
     };
 
-    useEffect(() => {
-        console.log("KORS ", selectedAccount)
-    }, [])
-
+ 
     const handleDelete = (student_Number) => {
         setConfirmationModal({
             isOpen: true,
