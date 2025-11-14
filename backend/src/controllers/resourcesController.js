@@ -23,44 +23,64 @@ export const getResources = async (req, res) => {
   try {
     //FOR BOOKS
     if (selectedCategory === "books") {
-      //CHECK FOR SEARCHTERM
-      if (searchTerm) {
-        conditions.push(("title_name LIKE ? OR author_name LIKE ?"));
-        params.push(`%${searchTerm}%`, `%${searchTerm}%`);
-        whereClause = `WHERE ${conditions}`;
-      }
       //CHECK FOR SELECTEDTYPES
       if (selectedTypes) {
         if (typeof selectedTypes === "string") {
           types = [selectedTypes];
         }
         if (types && Array.isArray(types) || selectedTypes && Array.isArray(selectedTypes)) {
-
           const length = types ? types.length : selectedTypes.length;
-
           if (length > 0) {
             for (let i = 0; i < length; i++) {
-              conditions.push(("type = ?"));
+              typeCondition.push((("type = ?")));
             }
-            whereClause = `WHERE ${conditions.join(" OR ")}`;
           }
         }
         params.push(...(types ? types : selectedTypes));
+
+        if (typeCondition && typeCondition.length > 0) {
+          allConditions.push(`(${typeCondition.join(" OR ")})`);
+        }
+      }
+      //CHECK FOR SEARCHTERM
+      if (searchTerm && searchTerm.trim() !== "") {
+        searchCondition.push(("title_name LIKE ? OR author_name LIKE ?"));
+        params.push(`%${searchTerm}%`, `%${searchTerm}%`);
+        if (searchCondition && searchCondition.length > 0) {
+          allConditions.push(searchCondition.join(""));
+        }
+      }
+      //CHECK FOR STATUS
+      if (status !== "") {
+        statusCondition.push(("status = ?"));
+        params.push(status);
+        if (statusCondition && statusCondition.length > 0) {
+          allConditions.push(statusCondition.join(""));
+        }
       }
 
+      allConditions.length > 0 ? whereClause = `WHERE ${allConditions.join(" AND ")}` : "";
+
       params.push(pageSize, offSet);
-      sql = `SELECT * FROM books ${whereClause} LIMIT ? OFFSET ?`
-      console.log(sql);
-      console.log(params);
+      sql = `SELECT Author_Name, Title_Name, Type, 
+              COUNT(*) AS Total_Copies, 
+              SUM(CASE WHEN Status = 'Available' THEN 1 ELSE 0 END) AS Available_Copies 
+              FROM books 
+              ${whereClause} 
+              GROUP BY Author_Name, Title_Name, Type LIMIT ? OFFSET ?`;
 
       const [rows] = await db.query(sql, params);
+
+      console.log("SQL " , sql)
+      console.log("PARAMS " , params)
+      console.log(rows)
       const sqlTotalQuery = `SELECT COUNT(*) AS total FROM books ${whereClause}`;
       const [total] = await db.query(sqlTotalQuery, params);
       const totalCount = total[0].total;
-
       res.json({ rows, total: totalCount });
-
     }
+
+
 
     //FOR ACADEMIC PAPERS
     if (selectedCategory === "academic-papers") {
@@ -106,6 +126,8 @@ export const getResources = async (req, res) => {
       sql = `SELECT * FROM academic_papers ${whereClause} LIMIT ? OFFSET ?`
 
       const [rows] = await db.query(sql, params);
+      console.log(rows)
+
       const sqlTotalQuery = `SELECT COUNT(*) AS total FROM academic_papers ${whereClause}`;
       const [total] = await db.query(sqlTotalQuery, params);
       const totalCount = total[0].total;

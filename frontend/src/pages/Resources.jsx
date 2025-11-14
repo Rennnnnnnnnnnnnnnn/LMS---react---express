@@ -4,6 +4,8 @@ import qs, { stringify } from "qs";
 import SearchBar from "../components/SearchBar";
 import formatDate from "../utits/formatDate";
 import AddNewResourceModal from "../components/modals/AddNewResourceModal";
+import EyeIcon from "../assets/Eye_Icon.png";
+import ViewBookCopiesModal from "../components/modals/ViewBookCopiesModal";
 
 import TablePagination from '@mui/material/TablePagination';
 
@@ -24,6 +26,7 @@ function Resources() {
 
     // Modal state
     const [isAddNewResourceModalOpen, setIsAddNewResourceModalOpen] = useState(false);
+    const [isViewBookCopiesModalOpen, setIsViewBookCopiesModalOpen] = useState(false);
 
     // Data-related state
     const [items, setItems] = useState([]);
@@ -43,6 +46,7 @@ function Resources() {
                 paramsSerializer: params => qs.stringify(params, { arrayFormat: 'repeat' }),
             });
             setItems(res.data.rows);
+
             setTotal(res.data.total);
         } catch (err) {
             console.error(err);
@@ -98,6 +102,10 @@ function Resources() {
 
     const handleStatusChange = (e) => {
         setStatus(e.target.value);
+    }
+
+    const handleViewBookCopiesButtonClick = () => {
+        setIsViewBookCopiesModalOpen(true)
     }
 
     return (
@@ -226,7 +234,7 @@ function Resources() {
                                                 <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Title</th>
                                                 <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Author</th>
                                                 <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Type</th>
-                                                <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Status</th>
+                                                <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Available Copies</th>
                                             </>
                                         ) : (
                                             <>
@@ -250,7 +258,29 @@ function Resources() {
                                                     <td className="px-4 py-2">{item.Title_Name}</td>
                                                     <td className="px-4 py-2">{item.Author_Name}</td>
                                                     <td className="px-4 py-2">{item.Type}</td>
-                                                    <td className="px-4 py-2">{item.Status}</td>
+                                                    <td className="px-4 py-2">
+                                                        <div className="flex flex-row items-center gap-2">
+                                                            {item.Available_Copies}/{item.Total_Copies}{" "}
+                                                            {
+                                                                item.Available_Copies === "0"
+                                                                    ? "No Copy Available"
+                                                                    : item.Available_Copies === "1"
+                                                                        ? "Copy Available"
+                                                                        : "Copies Available"
+                                                            }
+
+                                                            <button
+                                                                className="ml-auto hover:cursor-pointer bg-red-200 p-2 rounded-xl h-10 w-10 flex items-center justify-center"
+                                                                onClick={handleViewBookCopiesButtonClick}
+                                                            >
+                                                                <img
+                                                                    src={EyeIcon}
+                                                                    alt="Eye Icon"
+                                                                    className="w-6 h-6"
+                                                                />
+                                                            </button>
+                                                        </div>
+                                                    </td>
                                                 </>
                                             ) : (
                                                 <>
@@ -274,10 +304,14 @@ function Resources() {
                 </main>
             </div>
 
-            {/* Modal with transition */}
             <AddNewResourceModal
                 isOpen={isAddNewResourceModalOpen}
                 onClose={() => setIsAddNewResourceModalOpen(false)}
+            />
+
+            <ViewBookCopiesModal
+                isOpen={isViewBookCopiesModalOpen}
+                onClose={() => setIsViewBookCopiesModalOpen(false)}
             />
 
         </>
