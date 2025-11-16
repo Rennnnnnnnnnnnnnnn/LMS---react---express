@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-function AddNewResourceModal({ isOpen, onClose }) {
+function AddNewResourceModal({ isOpen, onClose, onSuccess }) {
 
     const [formData, setFormData] = useState({
         idNumber: "",
@@ -66,7 +66,18 @@ function AddNewResourceModal({ isOpen, onClose }) {
                 return;
             }
             toast.success("Item added successfully.");
-
+            onSuccess();
+            onClose();
+            setFormData({
+                idNumber: "",
+                category: "",
+                title: "",
+                author: "",
+                academicYear: "",
+                course: "",
+                type: "",
+                status: "",
+            });
         } catch (error) {
             toast.error(error);
             console.log("Error: ", error);
@@ -293,7 +304,6 @@ function AddNewResourceModal({ isOpen, onClose }) {
                                     Status:
                                 </label>
                                 <select
-                                    id="status"
                                     name="status"
                                     value={formData.status}
                                     onChange={handleInputChange}

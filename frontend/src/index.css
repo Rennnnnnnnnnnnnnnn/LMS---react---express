@@ -4,11 +4,12 @@
   overflow: hidden;
 } */
 
-.scrollbar-hide {
+.scrollbar-hidden {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
 
-.scrollbar-hide::-webkit-scrollbar {
+.scrollbar-hidden::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
 }
+

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import UserPNG from "../../assets/UserPNG.png";
+import User_Logo from "../../../assets/User_Logo.png";
 import { toast } from "react-toastify";
 
 const AddAccountModal = ({ isOpen, onClose, onSuccess }) => {
@@ -83,7 +83,7 @@ const AddAccountModal = ({ isOpen, onClose, onSuccess }) => {
                     <div className="flex flex-col flex-shrink-0 justify-center">
                         <div className="w-[100px] h-[100px] rounded-full border-2 border-blue-600 p-1 shadow-md">
                             <img
-                                src={selectedFile ? URL.createObjectURL(selectedFile) : UserPNG}
+                                src={selectedFile ? URL.createObjectURL(selectedFile) : User_Logo}
                                 alt="User avatar"
                                 className="w-full h-full rounded-full object-cover"
                             />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import UserPNG from "../../assets/UserPNG.png";
+import User_Logo from "../../../assets/User_Logo.png";
 const API_URL = import.meta.env.VITE_API_URL;
 
 function EditAccountModal({ isOpen, onClose, onSuccess, selectedAccount, onSaveConfirmation }) {
@@ -16,15 +16,13 @@ function EditAccountModal({ isOpen, onClose, onSuccess, selectedAccount, onSaveC
     const [selectedFile, setSelectedFile] = useState(null);
 
     useEffect(() => {
-        if (selectedAccount) {
-            setFormData({
-                Name: selectedAccount.Name,
-                Course: selectedAccount.Course,
-                Year_And_Section: selectedAccount.Year_And_Section,
-                Email: selectedAccount.Email,
-                Student_Number: selectedAccount.Student_Number
-            });
-        }
+        setFormData({
+            Name: selectedAccount.Name || "",
+            Course: selectedAccount.Course || "",
+            Year_And_Section: selectedAccount.Year_And_Section || "",
+            Email: selectedAccount.Email || "",
+            Student_Number: selectedAccount.Student_Number || ""
+        });
         setSelectedFile(null);
     }, [selectedAccount]);
 
@@ -35,10 +33,7 @@ function EditAccountModal({ isOpen, onClose, onSuccess, selectedAccount, onSaveC
         });
     };
 
-
-
     if (!isOpen) return null;
-
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-lg w-full max-w-2xl p-6">
@@ -56,7 +51,7 @@ function EditAccountModal({ isOpen, onClose, onSuccess, selectedAccount, onSaveC
                                         ? URL.createObjectURL(selectedFile)
                                         : selectedAccount?.Profile_Picture
                                             ? `${API_URL}/uploads/${selectedAccount.Profile_Picture}`
-                                            : UserPNG
+                                            : User_Logo
                                 }
                                 alt="User avatar"
                                 className="w-full h-full rounded-full object-cover"
@@ -173,15 +168,15 @@ function EditAccountModal({ isOpen, onClose, onSuccess, selectedAccount, onSaveC
                 {/* Buttons */}
                 <div className="flex justify-end gap-3 mt-6">
                     <button
-                        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                        className="px-4 py-2 w-20 rounded-lg bg-blue-600 text-white hover:bg-blue-900 transition"
                         onClick={() => {
                             onSaveConfirmation(formData, selectedFile);
                         }}
                     >
-                        Save Changes
+                        Save
                     </button>
                     <button
-                        className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
+                        className="px-4 py-2 w-20 rounded-lg border border-gray-600 text-gray-700 hover:bg-gray-300 transition"
                         onClick={onClose}
                     >
                         Cancel

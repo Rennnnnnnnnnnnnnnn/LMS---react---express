@@ -6,8 +6,9 @@ function ToastNotification() {
   return (
     <>
       <ToastContainer
-        position="top-right"   
-        autoClose={3000}       
+        // position="top-right"
+        position="top-center"
+        autoClose={3000}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
@@ -15,7 +16,16 @@ function ToastNotification() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light"          
+        theme="light"
+        toastStyle={{
+          width: "400px",
+        }}
+
+      // OLD STYLE
+      /*    style={{
+           whiteSpace: 'nowrap',
+           width: '400px'
+         }} */
       />
     </>
   );

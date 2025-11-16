@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import TablePagination from '@mui/material/TablePagination';
 import SearchBar from "../components/SearchBar";
-import AddAccountModal from "../components/modals/AddNewAccountModal";
-import EditAccountModal from "../components/modals/EditAccountModal";
+import AddAccountModal from "../components/modals/accounts-modals/AddNewAccountModal";
+import EditAccountModal from "../components/modals/accounts-modals/EditAccountModal";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -14,15 +14,12 @@ function Accounts() {
     // Selection-related state
     const [selectedAccount, setSelectedAccount] = useState("");
     const [selectedCourses, setSelectedCourses] = useState({});
-
     // Pagination-related state
     const [page, setPage] = useState(0);
     const [limit, setLimit] = useState(10);
     const [total, setTotal] = useState(0);
-
     // Search-related state
     const [searchTerm, setSearchTerm] = useState("");
-
     // Modal-related state
     const [isAddNewAccountModalOpen, setIsAddNewAccountModalOpen] = useState(false);
     const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false);
@@ -33,7 +30,6 @@ function Accounts() {
         onConfirm: null,
         type: ""
     });
-
     // Data-related state
     const [accounts, setAccounts] = useState([]);
     const [courses, setCourses] = useState([]);
@@ -48,7 +44,6 @@ function Accounts() {
                     return course;
                 }
             }).join(';');
-
             const res = await axios.get("/api/accounts/getAccounts", {
                 params: {
                     filters: filters,
@@ -56,17 +51,15 @@ function Accounts() {
                     limit: limit,
                     searchTerm: searchTerm
                 }
-            })
-
+            });
             setAccounts(res.data.rows);
             setTotal(res.data.total);
         } catch (error) {
             console.error('Error fetching data:', error);
         }
-
     };
 
- 
+
     const handleDelete = (student_Number) => {
         setConfirmationModal({
             isOpen: true,
@@ -87,9 +80,9 @@ function Accounts() {
             });
             const data = await res.json();
             if (res.ok) {
-                toast.success("Account deleted successfull!")
                 fetchCourses();
                 getAccounts();
+                toast.success("Account deleted successfull!")
             } else {
                 toast.error("Failed to delete account.")
                 console.log(data.error);
@@ -145,13 +138,15 @@ function Accounts() {
                 getAccounts();
                 fetchCourses();
                 setIsEditAccountModalOpen(false);
+                setPendingEditData(null);
             } else {
-                alert(data.error || "Failed to update account.");
+                console.log(data.error);
+                toast.error(data.error || "Failed to update account.");
             }
         } catch (err) {
-            console.error("Error:", err);
-            alert("Something went wrong.");
-        } finally {
+            console.error("Error during account update:", err);
+            const errorMessage = err?.message || "Something went wrong.";
+            toast.error(errorMessage);
             setPendingEditData(null);
         }
     };
@@ -220,36 +215,33 @@ function Accounts() {
 
     return (
         <>
-            <div className="flex mt-4 justify-between items-center bg-orange-200">
-                <h1 className="text-2xl ml-10 ">Accounts Page</h1>
-                <div className="">
-
-                    <div className="flex gap-x-6 justify-end items-center">
-                        <button
-                            className="bg-gray-400 hover:bg-gray-700 text-black hover:text-white font-bold py-1 px-3 rounded"
-                            onClick={() => setIsAddNewAccountModalOpen(true)}
-                        >
-                            +
-                        </button>
-                        <div className="h-8 w-80">
-                            <SearchBar
-                                placeholder="Search..."
-                                onSearch={setSearchTerm}
-                            />
-                        </div>
-                        <TablePagination
-                            component="div"
-                            count={total}
-                            page={page}
-                            onPageChange={handleChangePage}
-                            rowsPerPage={limit}
-                            onRowsPerPageChange={handleChangeRowsPerPage}
+            <div className="flex mt-4 justify-end items-center bg-orange-200">
+                <div className="flex gap-x-6 justify-end items-center">
+                    <button
+                        className="bg-gray-400 hover:bg-gray-700 text-black hover:text-white font-bold py-1 px-3 rounded"
+                        onClick={() => setIsAddNewAccountModalOpen(true)}
+                    >
+                        +
+                    </button>
+                    <div className="h-8 w-80">
+                        <SearchBar
+                            placeholder="Search..."
+                            onSearch={setSearchTerm}
                         />
                     </div>
+                    <TablePagination
+                        component="div"
+                        count={total}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        rowsPerPage={limit}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                    />
                 </div>
+
             </div>
             <div className="main-body flex flex-row bg-yellow-400 h-[810px]">
-                <div className="side-bar bg-red-400 p-8 w-70 h-[96%] overflow-auto scrollbar-hide m-4">
+                <div className="side-bar bg-red-400 p-8 w-70 h-[96%] overflow-auto scrollbar-hidden m-4">
                     <div>
                         <fieldset className="space-y-2 ">
                             <legend className="text-lg font-semibold">Select Courses</legend>
@@ -289,11 +281,12 @@ function Accounts() {
                     </div>
                 </div>
 
-                <div className="main-body flex-1 bg-blue-200 p-4 overflow-auto scrollbar-hide">
-                    <table className="w-full border border-gray-300 bg-white shadow-md rounded-lg">
+                <div className="main-body flex-1 bg-blue-200 p-4 overflow-auto scrollbar-hidden">
+                    <table className="w-full border border-gray-300 bg-white shadow-md">
                         <thead className="bg-gray-400">
                             <tr>
                                 <th className="px-4 py-3 text-center text-sm font-semibold uppercase"></th>
+                                <th className="px-4 py-3 text-center text-sm font-semibold uppercase">ID Number</th>
                                 <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Name</th>
                                 <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Course - Year&Section</th>
                                 <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Email</th>
@@ -303,7 +296,10 @@ function Accounts() {
                         <tbody>
                             {accounts.map((account, index) => (
                                 <tr key={account.Student_Number} className="border-b border-gray-200 hover:bg-gray-300 ">
-                                    <td className="px-8 py-2">{index + 1 + page * limit}</td>   <td className="px-8 py-2">{account.Name}</td>
+
+                                    <td className="px-8 py-2">{index + 1 + page * limit}</td>
+                                    <td className="px-8 py-2">{account.Student_Number}</td>
+                                    <td className="px-8 py-2">{account.Name}</td>
                                     <td className="px-8 py-2">{account.Course} - {account.Year_And_Section}</td>
                                     <td className="px-8 py-2">{account.Email}</td>
 
@@ -317,7 +313,6 @@ function Accounts() {
                                                 alt="Edit Icon"
 
                                             />
-
                                         </button>
                                         <button
                                             className="bg-red-200 px-2 py-2 rounded-xl h-10 w-10"
@@ -326,10 +321,8 @@ function Accounts() {
                                             <img
                                                 src={DeleteIcon}
                                                 alt="Delete Icon"
-
                                             />
                                         </button>
-
                                     </td>
                                 </tr>
                             ))}
